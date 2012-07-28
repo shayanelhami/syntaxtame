@@ -12,7 +12,7 @@ there with a colorful one.
 
 "Syntax tame" is a tool which tames this complexity and allows you to do it fast and flicker free on the server side. 
 
-All you need to say ia:
+All you need to say is:
 
     var html = new Highlighter.Code(code).Highlighted;
     
