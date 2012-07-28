@@ -17,91 +17,146 @@ namespace Highlighter
 {
     public class Code
     {
-        public static string GetHighlighted(string sourceCode) {
+        string SourceCode;
+        ReadOnlyDocument Document;
+        List<Insertion> Insertions;
+
+        public Code(string sourceCode)
+        {
+            SourceCode = sourceCode;
+            Insertions = new List<Insertion>();
+        }
+
+        private string _Highlighted;
+        public string Highlighted
+        {
+            get
+            {
+                return _Highlighted ?? (_Highlighted = GetHighlighted());
+            }
+        }
+
+        private string GetHighlighted()
+        {
             var parser = new CSharpParser();
-            var insertions = new List<Insertion>();
-            var doc = new ReadOnlyDocument(sourceCode);
-            var compilationUnit = parser.Parse(doc, "");
 
-            foreach (var element in compilationUnit.Children) {
-                Walk(element, doc, insertions);
+            var nodes = parser.ParseSnippet(ref SourceCode);
+            Document = new ReadOnlyDocument(SourceCode);
+
+            foreach (var element in nodes)
+            {
+                Walk(element);
             }
 
-            return Merge(doc, insertions);
+            var merged = Merge();
+            var cleaned = ExtraCode.Remove(merged);
+
+            return cleaned;
         }
 
-        #region Keywords
-        static string[] Keywords = new string[] {
-		    "abstract","event","new","struct","as","explicit","null","switch","base","extern","object","this","bool",
-            "false","operator","throw","break","finally","out","true","byte","fixed","override","try","case","float",
-            "params","typeof","catch","for","private","uint","char","foreach","protected","ulong","checked","goto",
-            "public","unchecked","class","if","readonly","unsafe","const","implicit","ref","ushort","continue","in",
-            "return","using","decimal","int","sbyte","virtual","default","interface","sealed","volatile","delegate",
-            "internal","short","void","do","is","sizeof","while","double","lock","stackalloc"," ","else","long",
-            "static"," ","enum","namespace","string"
-		};
-        #endregion
+        private void Walk(AstNode node)
+        {
+            var phrase = FindPhrase(node);
+            if (phrase != Phrase.Unknwon)
+            {
+                AddInsertion(node, phrase);
+            }
 
-        private static void Walk(AstNode node, IDocument doc, List<Insertion> insertions) {
-            string phrase = null;
+            foreach (var child in node.Children)
+            {
+                Walk(child);
+            }
+        }
 
-            if (node.Role == Roles.Comment) {
-                phrase = "comment";
-            } else if (node.Role == Roles.Type) {
-                phrase = "type";
+        private static Phrase FindPhrase(AstNode node)
+        {
+            var text = node.GetText();
 
+            if (node.Role == Roles.Comment)
+                return Phrase.Comment;
+
+            if (node.Role == Roles.Type)
+            {
                 var type = (node as PrimitiveType);
-                if (type != null && type.Keyword != null)
-                    phrase = "keyword";
-            } else if (node is PrimitiveExpression) {
-                if (node.GetText().StartsWith("\"") ||
-                    node.GetText().StartsWith("'")) {
-                    phrase = "string";
-                }
-            } else if (node is CSharpTokenNode) {
-                if (Keywords.Contains(node.GetText()))
-                    phrase = "keyword";
+                if (type != null)
+                    return (type.Keyword != null) ? Phrase.Keyword : Phrase.Type;
+
+                // some keywords can be type like "var" which our parser does not recognise
+                return text.IsKeyword() ? Phrase.Keyword : Phrase.Type;
             }
 
-            if (phrase != null) {
-                insertions.Add(new Insertion {
-                    Offset = doc.GetOffset(node.StartLocation),
-                    Phrase = String.Format("<span class='{0}'>", phrase)
-                });
-
-                insertions.Add(new Insertion {
-                    Offset = doc.GetOffset(node.EndLocation),
-                    Phrase = "</span>"
-                });
-
+            if (node is PrimitiveExpression)
+            {
+                if (text.IsString())
+                    return Phrase.String;
             }
 
-            foreach (var child in node.Children) {
-                Walk(child, doc, insertions);
+            if (node is CSharpTokenNode)
+            {
+                if (text.IsKeyword())
+                    return Phrase.Keyword;
             }
+
+            return Phrase.Unknwon;
         }
 
-        private static string Merge(ReadOnlyDocument doc, List<Insertion> insertions) {
+        private void AddInsertion(AstNode node, Phrase phrase)
+        {
+            // start tag
+            Insertions.Add(new Insertion
+            {
+                Offset = Document.GetOffset(node.StartLocation),
+                Phrase = String.Format("<span class='{0}'>", phrase.ToCss())
+            });
+
+            // end tag
+            Insertions.Add(new Insertion
+            {
+                Offset = Document.GetOffset(node.EndLocation),
+                Phrase = "</span>"
+            });
+        }
+
+        private string Merge()
+        {
             var sb = new StringBuilder();
 
-            for (int index = 0; index < doc.TextLength; index++) {
-                var insertion = insertions.FirstOrDefault(ins => ins.Offset == index);
-                if (insertion != null) {
-                    sb.Append(insertion.Phrase);
+            for (int index = 0; index < Document.TextLength; index++)
+            {
+                var insertions = Insertions.Where(ins => ins.Offset == index);
+                foreach (var ins in insertions)
+                {
+                    sb.Append(ins.Phrase);
                 }
 
-                var ch = doc.GetCharAt(index);
-                if (ch == '<') {
-                    sb.Append("&lt;");
-                } else if (ch == '>') {
-                    sb.Append("&gt;");
-                } else {
-                    sb.Append(ch);
-                }
+                AppendHtmlSafeCharacter(sb, index);
+            }
+
+            var appends = Insertions.Where(ins => ins.Offset >= Document.TextLength).OrderBy(ins => ins.Offset);
+            foreach (var ins in appends)
+            {
+                sb.Append(ins.Phrase);
             }
 
             return sb.ToString();
         }
+
+        private void AppendHtmlSafeCharacter(StringBuilder sb, int index)
+        {
+            var ch = Document.GetCharAt(index);
+
+            if (ch == '<')
+            {
+                sb.Append("&lt;");
+            } else if (ch == '>')
+            {
+                sb.Append("&gt;");
+            } else
+            {
+                sb.Append(ch);
+            }
+        }
+
     }
 }
 

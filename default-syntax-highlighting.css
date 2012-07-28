@@ -1,0 +1,5 @@
+pre { background: #ddd; padding: 2px; }
+code .keyword { color: darkBlue; }
+code .type { color: #2B91AF; }
+code .comment { color: #008000; }
+code .string { color: #A31515; }
