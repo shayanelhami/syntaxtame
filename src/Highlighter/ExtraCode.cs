@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace Highlighter
+﻿namespace Highlighter
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+
     class ExtraCode
     {
         public const string BeginTag = "/*[[*/";
@@ -41,7 +41,6 @@ namespace Highlighter
 
         private static string Remove(string code, string beginTag, string endTag)
         {
-
             int startIndex;
             while ((startIndex = code.IndexOf(beginTag)) != -1)
             {
