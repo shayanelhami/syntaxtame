@@ -1,20 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-
-
-using ICSharpCode.NRefactory.CSharp;
-using ICSharpCode.NRefactory.CSharp.Resolver;
-using ICSharpCode.NRefactory.Semantics;
-using ICSharpCode.NRefactory.TypeSystem;
-using ICSharpCode.NRefactory.TypeSystem.Implementation;
-using ICSharpCode.NRefactory.Editor;
-using ICSharpCode.NRefactory;
-
-namespace Highlighter
+﻿namespace Highlighter
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.IO;
+
+    using ICSharpCode.NRefactory.CSharp;
+    using ICSharpCode.NRefactory.CSharp.Resolver;
+    using ICSharpCode.NRefactory.Semantics;
+    using ICSharpCode.NRefactory.TypeSystem;
+    using ICSharpCode.NRefactory.TypeSystem.Implementation;
+    using ICSharpCode.NRefactory.Editor;
+    using ICSharpCode.NRefactory;
+
     public class Code
     {
         string SourceCode;
@@ -148,10 +147,12 @@ namespace Highlighter
             if (ch == '<')
             {
                 sb.Append("&lt;");
-            } else if (ch == '>')
+            }
+            else if (ch == '>')
             {
                 sb.Append("&gt;");
-            } else
+            }
+            else
             {
                 sb.Append(ch);
             }
