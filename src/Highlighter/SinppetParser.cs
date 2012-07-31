@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using ICSharpCode.NRefactory.CSharp;
-using System.IO;
-
-namespace Highlighter
+﻿namespace Highlighter
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using ICSharpCode.NRefactory.CSharp;
+    using System.IO;
+
     static class SinppetParser
     {
         public static IEnumerable<AstNode> ParseSnippet(this CSharpParser parser, ref string sourceCode)
@@ -67,8 +67,5 @@ namespace Highlighter
                 after: "}}");
             return parser.Parse(new StringReader(sourceCode), "").Children;
         }
-
-
-
     }
 }
